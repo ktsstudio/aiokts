@@ -1,0 +1,6 @@
+publish:
+  only:
+    - tags
+  script:
+    - python3.5 setup.py register -r pypi
+    - python3.5 setup.py sdist upload -r pypi
