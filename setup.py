@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
 version = '0.1.0'
-#modules = ['tornado', 'torndsession', 'passlib', 'ujson', 'six']
+modules = ['aiohttp']
 
 setup(
     name='aiokts',
