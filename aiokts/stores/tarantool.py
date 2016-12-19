@@ -9,6 +9,7 @@ logger = logging.getLogger('tarantool')
 
 class TarantoolStore(BaseStore):
     def __init__(self, config):
+        logger.debug(config)
         tnt = aiotarantool.Connection(
             config['host'],
             config['port'],
@@ -19,13 +20,14 @@ class TarantoolStore(BaseStore):
 
     def call(self, name, *args):
         start = datetime.now()
-        logger.debug('{} Tarantool call begin: {}'.format(start, name))
+        import os
+        logger.debug('Tarantool call begin: {}, pid: {}, user: {}'.format(name, os.getpid(), self.user))
 
         result = super().__getattribute__('call')(name, *args)
         end = datetime.now()
         delta = end - start
         delta = delta.seconds + (delta.microseconds / (10 ** 6))
-        logger.debug('{} Tarantool call end: {}, time: {}'.format(end, name, delta))
+        logger.debug('Tarantool call end: {}, time: {}'.format(name, delta))
 
         return result
 
