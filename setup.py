@@ -2,8 +2,10 @@ from os import path
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
-version = '0.1.0'
-modules = ['aiohttp']
+version = '0.2.0'
+modules = [
+    'aiohttp>=1.2.0'
+]
 
 setup(
     name='aiokts',
@@ -23,7 +25,6 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
 
