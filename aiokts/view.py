@@ -22,6 +22,10 @@ class BaseView(web.View):
     @property
     def logger(self):
         return self.ctx.logger if self.ctx is not None else None
+
+    @property
+    def stores(self):
+        return self.app.stores
     
     @property
     def loop(self):

@@ -7,6 +7,7 @@ from aiohttp.log import web_logger
 from aiokts.context import Context
 from aiokts.request import KtsRequest
 from aiokts.server import KtsServer
+from aiokts.storeset import StoreSet
 
 sentinel = object()
 
@@ -23,6 +24,7 @@ class KtsHttpApplication(web.Application):
             middlewares=kwargs.get('middlewares', ()),
             debug=kwargs.get('debug', False)
         )
+        self.stores = StoreSet(kwargs.get('stores', {}))
         
         for route in self.ROUTES:
             method, path, view_cls = route
