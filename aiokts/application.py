@@ -54,15 +54,3 @@ class KtsHttpApplication(web.Application):
         return self.SERVER_CLS(self._handle,
                                request_factory=self._make_request,
                                loop=self.loop, **kwargs)
-
-
-class KtsContainerHttpApplication(KtsHttpApplication):
-    def __init__(self, config, container=None, **kwargs):
-        super().__init__(**kwargs)
-
-        self.config = config
-        self._container = weakref.ref(container) if container else None
-
-    @property
-    def container(self):
-        return self._container() if self._container else None
