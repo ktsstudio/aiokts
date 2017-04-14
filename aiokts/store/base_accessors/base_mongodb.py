@@ -9,8 +9,8 @@ from aiokts.store.base_accessors import BaseAccessor, ConfigurationError
 class BaseMongoDbAccessor(BaseAccessor):
     DEFAULT_PORT = 27017
 
-    def __init__(self, config, loop=None):
-        super().__init__(config, loop)
+    def __init__(self, config, type, store, loop=None):
+        super().__init__(config, type, store, loop=loop)
         self._conn = None
 
     async def _connect(self):
