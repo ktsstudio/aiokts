@@ -2,9 +2,9 @@ from os import path
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
-version = '0.2.2'
+version = '0.2.3'
 modules = [
-    'aiohttp>=1.2.0'
+    'aiohttp>=2.0,<3.0'
 ]
 
 setup(

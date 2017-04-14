@@ -2,18 +2,17 @@ import abc
 import asyncio
 import logging
 import logging.config
-import traceback
 
-from aiokts.storeset import StoreSet
+from aiokts.store import Store
 
 
 class Daemon(object):
-    def __init__(self, loop=None, **kwargs):
+    def __init__(self, *, loop=None, **kwargs):
         self.name = self.__class__.__name__
+        self.logger = logging.getLogger('Daemon[{}]'.format(self.name))
         self.loop = loop
         self._stopped = False
         self._run_task = None
-        self.stores = StoreSet(kwargs.get('stores', {}))
 
     @property
     def is_stopped(self):
@@ -23,47 +22,71 @@ class Daemon(object):
     def is_running(self):
         return not self._stopped
 
-    @asyncio.coroutine
-    def start(self):
-        def on_run_finished(future):
-            if not future.cancelled():
-                exc = future.exception()
-                if exc:
-                    future.print_stack()
-                    logging.error('Daemon {} exception'.format(self.__class__.__name__))
-                self._stopped = True
-            else:
-                logging.info('Daemon {} cancelled'.format(self.__class__.__name__))
-                asyncio.ensure_future(self.stop(), loop=self.loop)
+    def check(self):
+        pass
 
+    async def start(self):
+        self.check()
+        self.logger.info('Starting daemon %s', self.name)
         try:
             self._run_task = asyncio.ensure_future(self.run(), loop=self.loop)
-            yield from self._run_task
+            await self._run_task
         except asyncio.futures.CancelledError:
             pass
         except Exception as e:
-            logging.exception(e)
+            self.logger.exception(e)
 
-    @asyncio.coroutine
-    def stop(self):
-        logging.info('Stopping {} daemon'.format(self.name))
-        if asyncio.iscoroutine(self.cancel) or asyncio.iscoroutinefunction(self.cancel):
-            yield from self.cancel()
+    async def stop(self):
+        self.logger.info('Stopping %s daemon', self.name)
+        if asyncio.iscoroutine(self.cancel) \
+                or asyncio.iscoroutinefunction(self.cancel):
+            await self.cancel()
         else:
             self.cancel()
         if self._run_task is not None:
             self._run_task.cancel()
             self._run_task = None
         self._stopped = True
-        logging.info('Stopped {} daemon'.format(self.name))
+        self.logger.info('Stopped %s daemon', self.name)
 
     @abc.abstractmethod
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         raise NotImplementedError()
 
     def cancel(self):
         pass
+
+
+class StoreDaemon(Daemon):
+    STORE_CLS = Store
+    STORE_NEED = []
+
+    def __init__(self, store_config, **kwargs):
+        super(StoreDaemon, self).__init__(**kwargs)
+        self.store = self.STORE_CLS(store_config,
+                                    need=self.STORE_NEED,
+                                    loop=self.loop)
+        self._store_connect_coro = None
+
+    def _on_store_connected(self, f):
+        self.logger.info('Store connected')
+        self._store_connect_coro = None
+
+    def start(self):
+        self._store_connect_coro = asyncio.ensure_future(
+            self.store.connect(),
+            loop=self.loop
+        )
+        self._store_connect_coro.add_done_callback(self._on_store_connected)
+        return super().start()
+
+    async def stop(self):
+        await super().stop()
+        if self._store_connect_coro:
+            self._store_connect_coro.cancel()
+            self._store_connect_coro = None
+        await self.store.disconnect()
+        self.logger.info('Store disconnected')
 
 
 def main(daemon):

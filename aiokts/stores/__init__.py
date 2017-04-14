@@ -1,3 +1,0 @@
-from .tarantool import TarantoolStore
-
-

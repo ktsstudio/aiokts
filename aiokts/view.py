@@ -2,11 +2,12 @@ import asyncio
 import json
 
 from aiohttp import web
-from aiohttp.web_exceptions import HTTPNotFound, HTTPException, HTTPMethodNotAllowed
+from aiohttp.web_exceptions import HTTPNotFound, HTTPException, \
+    HTTPMethodNotAllowed
 
 from aiokts.context import Context
 from aiokts.error import ServerError
-from aiokts.response import ApiErrorResponse
+from aiokts.response import ApiErrorResponse, ApiOkResponse
 from aiokts.util.arguments import ArgumentException
 
 
@@ -24,8 +25,8 @@ class BaseView(web.View):
         return self.ctx.logger if self.ctx is not None else None
 
     @property
-    def stores(self):
-        return self.app.stores
+    def store(self):
+        return self.app.store
 
     @property
     def loop(self):
@@ -49,13 +50,31 @@ class BaseView(web.View):
                 try:
                     source = await self.request.json()
                 except json.JSONDecodeError:
-                    raise ServerError(ServerError.BAD_REQUEST(message='Body must be a valid json'))
+                    raise ServerError(ServerError.BAD_REQUEST(
+                        message='Body must be a valid json'))
             else:
                 source = await self.request.post()
         self.request_data = source
 
     async def pre_handle(self):
         pass
+
+    def response_api_ok(self, data=None, http_status=200, *,
+                        headers=None, charset=None, json_dump_func=None,
+                        **kwargs):
+        return ApiOkResponse(ctx=self.ctx,
+                             data=data, http_status=http_status,
+                             headers=headers, charset=charset,
+                             json_dump_func=json_dump_func, **kwargs)
+
+    def response_api_error(self, message=None, data=None, http_status=500, *,
+                           headers=None, charset=None, json_dump_func=None,
+                           **kwargs):
+        return ApiErrorResponse(ctx=self.ctx,
+                                message=message, data=data,
+                                http_status=http_status, headers=headers,
+                                charset=charset, json_dump_func=json_dump_func,
+                                **kwargs)
 
     def handle_exception(self, e):
         if isinstance(e, ServerError):
@@ -64,30 +83,38 @@ class BaseView(web.View):
                 status = 500
             else:
                 status = error.http_code
-            self.logger.error('[{}] Error: {}'.format(repr(error.code), error.message))
+            self.logger.error(
+                '[{}] Error: {}'.format(repr(error.code), error.message))
 
-            return ApiErrorResponse(message=error.message,
-                                    data=error.payload,
-                                    http_status=status,
-                                    code=error.code)
+            return self.response_api_error(message=error.message,
+                                           data=error.payload,
+                                           http_status=status,
+                                           code=error.code)
         elif isinstance(e, ArgumentException):
             self.logger.warning('ArgumentException: {}'.format(e.message))
-            return ApiErrorResponse(message='Field {} is invalid'.format(e.field) if e.field is not None else '',
-                                    system_message=e.message,
-                                    http_status=400,
-                                    code='bad_request',
-                                    data=dict(field=e.field))
+
+            if e.field is not None:
+                message = 'Field {} is invalid'.format(e.field)
+            else:
+                message = ''
+
+            return self.response_api_error(message=message,
+                                           system_message=e.message,
+                                           http_status=400,
+                                           code='bad_request',
+                                           data=dict(field=e.field))
         elif isinstance(e, HTTPException):
             if e.status_code >= 500:
-                self.logger.exception('HTTPException: {}'.format(str(e)), exc_info=e)
-            e.headers.pop('Content-Type')
-            e.headers.pop('Content-Length')
-            return ApiErrorResponse(message=e.reason,
-                                    http_status=e.status_code,
-                                    headers=e.headers)
+                self.logger.exception('HTTPException: {}'.format(str(e)),
+                                      exc_info=e)
+
+            # e.headers.pop('Content-Type')
+            return self.response_api_error(message=e.reason,
+                                           http_status=e.status_code,
+                                           headers=e.headers)
         elif isinstance(e, Exception):
             self.logger.exception('Exception: {}'.format(str(e)), exc_info=e)
-            return ApiErrorResponse(message='Internal Server Error')
+            return self.response_api_error(message='Internal Server Error')
         else:
             self.logger.error('{} is not an exception'.format(repr(e)))
 
@@ -176,7 +203,8 @@ class ActionBaseView(BaseView):
                         allowed_methods.append(k)
 
                 if allowed_methods:
-                    raise HTTPMethodNotAllowed(method, allowed_methods=allowed_methods)
+                    raise HTTPMethodNotAllowed(method,
+                                               allowed_methods=allowed_methods)
 
                 raise HTTPNotFound()
         except Exception as e:
