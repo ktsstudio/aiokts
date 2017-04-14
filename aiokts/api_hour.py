@@ -75,9 +75,12 @@ class KtsWebContainer(api_hour.Container):
         return Store(self.config['store'],
                      need=self.STORE_NEED, loop=self.loop)
 
-    def store_connect(self):
-        self.logger.info('Starting store...')
+    async def store_connect(self):
         self._store = self.make_store()
+        if self._store is None:
+            return
+
+        self.logger.info('Starting store...')
 
         def on_finish(f):
             self.logger.info('Store is fully connected')
@@ -88,9 +91,11 @@ class KtsWebContainer(api_hour.Container):
             loop=self.loop
         )
         self._store_connect_coro.add_done_callback(on_finish)
-        return self._store_connect_coro
+        return await self._store_connect_coro
 
-    def store_disconnect(self):
+    async def store_disconnect(self):
+        if self._store is None:
+            return
         self.logger.info('Stopping store...')
 
         if self._store_connect_coro is not None:
@@ -105,4 +110,4 @@ class KtsWebContainer(api_hour.Container):
             loop=self.loop
         )
         coro.add_done_callback(on_finish)
-        return coro
+        return await coro
