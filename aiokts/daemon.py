@@ -22,6 +22,10 @@ class Daemon(object):
     def is_running(self):
         return not self._stopped
 
+    @property
+    def config(self):
+        return {}
+
     def check(self):
         pass
 
@@ -34,7 +38,7 @@ class Daemon(object):
         except asyncio.futures.CancelledError:
             pass
         except Exception as e:
-            self.logger.exception(e)
+            logging.exception(e)
 
     async def stop(self):
         self.logger.info('Stopping %s daemon', self.name)
@@ -47,7 +51,7 @@ class Daemon(object):
             self._run_task.cancel()
             self._run_task = None
         self._stopped = True
-        self.logger.info('Stopped %s daemon', self.name)
+        logging.info('Stopped %s daemon', self.name)
 
     @abc.abstractmethod
     async def run(self):
@@ -57,36 +61,43 @@ class Daemon(object):
         pass
 
 
-class StoreDaemon(Daemon):
-    STORE_CLS = Store
+class BaseStoreDaemon(Daemon):
     STORE_NEED = []
 
-    def __init__(self, store_config, **kwargs):
-        super(StoreDaemon, self).__init__(**kwargs)
-        self.store = self.STORE_CLS(store_config,
-                                    need=self.STORE_NEED,
-                                    loop=self.loop)
+    def __init__(self, store_config=None, **kwargs):
+        super().__init__(**kwargs)
+
+        self.store_config = store_config or self.config.get("store", {})
+        self.store = self.make_store()
         self._store_connect_coro = None
+
+    def make_store(self):
+        return Store(self.store_config,
+                     need=self.STORE_NEED,
+                     loop=self.loop)
 
     def _on_store_connected(self, f):
         self.logger.info('Store connected')
         self._store_connect_coro = None
 
     def start(self):
-        self._store_connect_coro = asyncio.ensure_future(
-            self.store.connect(),
-            loop=self.loop
-        )
-        self._store_connect_coro.add_done_callback(self._on_store_connected)
+        if self.store is not None:
+            self._store_connect_coro = asyncio.ensure_future(
+                self.store.connect(),
+                loop=self.loop
+            )
+            self._store_connect_coro.add_done_callback(
+                self._on_store_connected)
         return super().start()
 
     async def stop(self):
         await super().stop()
-        if self._store_connect_coro:
-            self._store_connect_coro.cancel()
-            self._store_connect_coro = None
-        await self.store.disconnect()
-        self.logger.info('Store disconnected')
+        if self.store is not None:
+            if self._store_connect_coro:
+                self._store_connect_coro.cancel()
+                self._store_connect_coro = None
+            await self.store.disconnect()
+            self.logger.info('Store disconnected')
 
 
 def main(daemon):

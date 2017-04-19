@@ -4,11 +4,11 @@ import json
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPNotFound, HTTPException, \
     HTTPMethodNotAllowed
+from aiokts.web.context import Context
+from aiokts.web.error import ServerError
 
-from aiokts.context import Context
-from aiokts.error import ServerError
-from aiokts.response import ApiErrorResponse, ApiOkResponse
 from aiokts.util.arguments import ArgumentException
+from aiokts.web.response import ApiErrorResponse, ApiOkResponse
 
 
 class BaseView(web.View):

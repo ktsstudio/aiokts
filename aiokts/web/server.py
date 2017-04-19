@@ -1,6 +1,6 @@
 from aiohttp.web_server import Server
 
-from aiokts.handler import KtsRequestHandler
+from aiokts.web.handler import KtsRequestHandler
 
 
 class KtsServer(Server):

@@ -2,10 +2,10 @@ import warnings
 
 from aiohttp.helpers import AccessLogger
 from aiohttp.web_server import RequestHandler
+from aiokts.web.error import ServerError
 
-from aiokts.error import ServerError
-from aiokts.response import ApiErrorResponse, KtsResponse
 from aiokts.util.json_utils import json_dumps
+from aiokts.web.response import ApiErrorResponse, KtsResponse
 
 
 class KtsAccessLogger(AccessLogger):
@@ -51,7 +51,9 @@ class KtsRequestHandler(RequestHandler):
     def log_access(self, message, environ, response, time):
         if self.access_logger:
             if not hasattr(response, 'ctx'):
-                warnings.warn('Response object has no ctx attribute')
+                self.access_logger.log(message, environ, response,
+                                       self.transport, time)
+                return
 
             ctx = response.ctx
             if ctx is None:

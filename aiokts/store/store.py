@@ -106,13 +106,14 @@ class Store(object):
                     'Accessor \'{}\' not found in Store. '
                     'Probably not specified in need'.format(name))
 
-    def wait_connected(self):
+    async def wait_connected(self):
         coros = []
         for accessor_type, c in self._accessors.items():
             coro = asyncio.ensure_future(c.wait_connected(), loop=self.loop)
             coros.append(coro)
 
-        return asyncio.wait(coros, loop=self.loop)
+        if len(coros) > 0:
+            await asyncio.wait(coros, loop=self.loop)
 
     def check_config(self, config):
         return config

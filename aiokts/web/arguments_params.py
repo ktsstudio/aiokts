@@ -1,8 +1,8 @@
 import functools
 import json
 
-from aiokts.error import ServerError
 from aiokts.util.arguments import check_arguments
+from aiokts.web.error import ServerError
 
 
 def arguments_params(arglist=None):

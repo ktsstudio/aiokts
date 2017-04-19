@@ -1,12 +1,9 @@
-import warnings
-import weakref
-
 from aiohttp import web
 from aiohttp.log import web_logger
+from aiokts.web.request import KtsRequest
+from aiokts.web.server import KtsServer
 
-from aiokts.context import Context
-from aiokts.request import KtsRequest
-from aiokts.server import KtsServer
+from aiokts.web.context import Context
 
 sentinel = object()
 

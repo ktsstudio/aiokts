@@ -1,11 +1,11 @@
 import asyncio
+import logging
 import weakref
 
 import api_hour
-import logging
 
-from aiokts.application import KtsHttpApplication
 from aiokts.store import Store
+from aiokts.web.application import KtsHttpApplication
 
 
 class KtsContainerHttpApplication(KtsHttpApplication):
@@ -60,7 +60,7 @@ class KtsWebContainer(api_hour.Container):
 
     async def start(self):
         # no await - no need to wait when everything is connected
-        self.store_connect()
+        asyncio.ensure_future(self.store_connect(), loop=self.loop)
         await super().start()
 
     async def stop(self):
