@@ -56,6 +56,8 @@ class StoreCommand(AsyncCommand):
         self.store = self.make_store()
 
     def make_store(self):
+        if self.manager.store_cls is None:
+            return None
         return self.manager.store_cls(self.store_config,
                                       need=self.STORE_NEED,
                                       loop=self.loop)
