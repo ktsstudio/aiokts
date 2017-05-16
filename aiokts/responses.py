@@ -13,10 +13,18 @@ class JsonResponse(Response):
         (500, 'internal_error')
     )
 
-    def __init__(self, body=None, status=200, reason=None, text=None, headers=None, content_type=None, charset=None):
+    def __init__(
+            self, body=None, status=200,
+            reason=None, text=None, headers=None,
+            content_type=None, charset=None, log_message=''
+    ):
         body, status = self._process_body(body, status)
 
-        body = json.dumps(body).encode('utf-8')
+        self.log_message = log_message
+        self.json_body = body
+        self.str_body = json.dumps(body, ensure_ascii=False)
+
+        body = self.str_body.encode('utf-8')
         if not content_type:
             content_type = 'application/json'
 
@@ -63,3 +71,4 @@ class JsonResponse(Response):
                     break
 
         return body, status
+
