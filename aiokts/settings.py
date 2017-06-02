@@ -29,6 +29,10 @@ class Settings:
     def parse(self):
         args = self.parse_arguments()
         self.config_dir = args.config_dir
+        if self.config_dir is None:
+            self.config_dir = self.default_config_dir
+        is_config_by_args = args.config_dir is not None
+
         self.config_path = os.path.join(self.config_dir, 'main', 'main.yaml')
         self.logging_path = args.logging_config
         if self.logging_path is None:
@@ -39,7 +43,7 @@ class Settings:
 
         local_conf_path = os.path.join(
             self.local_config_dir, 'main', 'main.yaml')
-        if os.path.exists(local_conf_path):
+        if not is_config_by_args and os.path.exists(local_conf_path):
             self.local_config = self.parse_config(local_conf_path)
 
         self.config = copy.deepcopy(self.root_config)
@@ -51,7 +55,7 @@ class Settings:
         parser.add_argument('--config_dir',
                             type=str,
                             help='config dir path',
-                            default=self.default_config_dir)
+                            default=None)
         parser.add_argument('--logging_config',
                             type=str,
                             help='logging config path',
@@ -59,8 +63,9 @@ class Settings:
         args, left = parser.parse_known_args()
         sys.argv = sys.argv[:1] + left
 
-        assert os.path.isdir(args.config_dir), \
-            'config_dir `{}` does not exist'.format(args.config_dir)
+        if args.config_dir is not None:
+            assert os.path.isdir(args.config_dir), \
+                'config_dir `{}` does not exist'.format(args.config_dir)
 
         if args.logging_config is not None:
             assert os.path.exists(args.logging_config), \
