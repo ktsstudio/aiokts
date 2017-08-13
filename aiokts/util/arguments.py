@@ -104,8 +104,7 @@ def check_arguments(arglist, kwargs, *, cast_type=False):
                     arg_value = None
 
         # check argument type
-        if arg_definition.type is not None and (
-            arg_definition.required and arg_value is not None):  # None means "any type, do not check"
+        if arg_definition.type is not None and arg_value is not None:  # None means "any type, do not check"
             if not cast_type:
                 if not isinstance(arg_value, arg_definition.type):
                     raise ArgumentException(arg_name,
