@@ -10,9 +10,6 @@ class BaseTarantoolAccessor(BaseAccessor):
 
     def __init__(self, config, type, store, loop=None):
         super().__init__(config, type, store, loop=loop)
-        self._conn = None
-
-    async def _connect(self):
         self._conn = asynctnt.Connection(
             host=self.host,
             port=self.port,
@@ -20,6 +17,8 @@ class BaseTarantoolAccessor(BaseAccessor):
             password=self.password,
             loop=self.loop
         )
+
+    async def _connect(self):
         await self._conn.connect()
 
     async def _disconnect(self):
