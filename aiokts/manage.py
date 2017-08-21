@@ -1,12 +1,10 @@
 import argparse
+import inspect
 import logging
 import logging.config
 import os
 import pkgutil
 import sys
-import traceback
-
-import yaml
 
 from aiokts.managecommands import Command
 from aiokts.store import Store
@@ -29,6 +27,11 @@ class BaseManage(object):
 
         assert self.commands_package_path is not None, \
             'Must specify path to where commands are'
+        self.commands_package_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(inspect.getfile(self.__class__)),
+                self.commands_package_path))
+        self.logger.debug('Commands path: %s', self.commands_package_path)
 
     @property
     def commands(self):
