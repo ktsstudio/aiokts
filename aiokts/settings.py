@@ -1,4 +1,5 @@
 import argparse
+import collections
 import copy
 import os
 
@@ -12,6 +13,16 @@ import yaml
 __all__ = (
     'Settings',
 )
+
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            r = update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
 
 
 class Settings:
@@ -48,7 +59,7 @@ class Settings:
 
         self.config = copy.deepcopy(self.root_config)
         if self.local_config is not None:
-            self.config.update(self.local_config)
+            self.config = update(self.config, self.local_config)
 
     def parse_arguments(self):
         parser = argparse.ArgumentParser()
