@@ -4,6 +4,8 @@ from aiokts.store.base_accessors import BaseAccessor
 
 
 class BasePgAccessor(BaseAccessor):
+    DEFAULT_PORT = 5432
+
     def __init__(self, config, type, store, loop=None):
         super().__init__(config, type, store, loop=loop)
         self._pool = None
