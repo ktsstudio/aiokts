@@ -19,15 +19,16 @@ class BasePgAccessor(BaseAccessor):
         return await self._pool.release(conn)
 
     async def _connect(self):
-        pc = self.config['pool']
+        pool_min_size = self.config.get('pool_min', 1)
+        pool_max_size = self.config.get('pool_max', 1)
         self._pool = await asyncpg.create_pool(host=self.host,
                                                port=self.port,
                                                user=self.username,
                                                password=self.password,
                                                database=self.db_name,
                                                loop=self.loop,
-                                               min_size=pc['min_size'],
-                                               max_size=pc['max_size'])
+                                               min_size=pool_min_size,
+                                               max_size=pool_max_size)
 
     async def _disconnect(self):
         return await self._pool.close()
