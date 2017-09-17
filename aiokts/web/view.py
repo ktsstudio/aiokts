@@ -38,7 +38,7 @@ class BaseView(web.View):
             yield from self._parse_request()
             yield from self.pre_handle()
             res = (yield from super(BaseView, self).__iter__())
-            yield from self.post_handle()
+            yield from self.post_handle(self.request, res)
             return res
         except Exception as e:
             res = self.handle_exception(e)
@@ -61,7 +61,7 @@ class BaseView(web.View):
     async def pre_handle(self):
         pass
 
-    async def post_handle(self):
+    async def post_handle(self, request, response):
         pass
 
     def response_api_ok(self, data=None, http_status=200, *,
@@ -200,7 +200,7 @@ class ActionBaseView(BaseView):
                 yield from self.before_action()
                 result = yield from executing_method()
                 yield from self.after_action()
-                yield from self.post_handle()
+                yield from self.post_handle(self.request, result)
                 return result
             else:
                 allowed_methods = []
