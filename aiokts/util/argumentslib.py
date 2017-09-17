@@ -52,6 +52,15 @@ class IntArg(Argument):
         )
 
 
+class FloatArg(Argument):
+    def __init__(self, required=True, default=0.0):
+        super().__init__(
+            required=required,
+            type=float,
+            default=default
+        )
+
+
 class PositiveIntArg(Argument):
     def __init__(self, required=True, default=0, max_value=None):
         super().__init__(
@@ -119,6 +128,31 @@ class StringArg(Argument):
             filter=filter,
             validator=(lambda x: len(x) > 0) if not allow_empty else None,
             validator_message='must be non-empty string' if not allow_empty else None
+        )
+
+
+class EmailArg(Argument):
+    def __init__(self, required=True, strip=True, default=None):
+        if strip:
+            def filter(x):
+                x = x.strip()
+                return None if x == '' else x
+        else:
+            filter = None
+
+        def validator(x):
+            import re
+            m = re.match("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+                         x)
+            return bool(m)
+
+        super().__init__(
+            required=required,
+            default=default,
+            type=str,
+            validator=validator,
+            validator_message="Must be a valid email address",
+            filter=filter
         )
 
 
