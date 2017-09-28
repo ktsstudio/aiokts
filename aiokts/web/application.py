@@ -18,7 +18,8 @@ class KtsHttpApplication(web.Application):
             loop=kwargs.get('loop'),
             router=kwargs.get('router'),
             middlewares=kwargs.get('middlewares', ()),
-            debug=kwargs.get('debug', False)
+            debug=kwargs.get('debug', False),
+            client_max_size=kwargs.get('client_max_size', 1024**2)
         )
 
         for route in self.ROUTES:
