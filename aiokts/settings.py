@@ -7,6 +7,8 @@ import sys
 
 import logging
 import logging.config
+from logging.handlers import RotatingFileHandler
+
 import yaml
 
 
@@ -35,6 +37,7 @@ class Settings:
         self.logging_path = None
         self.root_config = None
         self.local_config = None
+        self.log_path = None
         self.config = None
 
     def parse(self):
@@ -61,6 +64,8 @@ class Settings:
         if self.local_config is not None:
             self.config = update(self.config, self.local_config)
 
+        self.log_path = args.log
+
     def parse_arguments(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--config_dir',
@@ -70,6 +75,10 @@ class Settings:
         parser.add_argument('--logging_config',
                             type=str,
                             help='logging config path',
+                            default=None)
+        parser.add_argument('--log',
+                            type=str,
+                            help='log file path',
                             default=None)
         args, left = parser.parse_known_args()
         sys.argv = sys.argv[:1] + left
@@ -96,3 +105,15 @@ class Settings:
             self.logging_path,
             disable_existing_loggers=False
         )
+
+        if self.log_path is not None:
+            old_file_handler = None
+            for handler in logging.root.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    old_file_handler = handler
+                    logging.root.removeHandler(handler)
+            if old_file_handler is not None:
+                file_handler = RotatingFileHandler(self.log_path,
+                                                   'w+', 104857600, 100)
+                file_handler.setFormatter(old_file_handler.formatter)
+                logging.root.addHandler(file_handler)

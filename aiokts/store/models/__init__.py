@@ -1,6 +1,9 @@
 import collections
 
 import logging
+
+import datetime
+
 from aiokts.util.json_utils import JsonSerializable
 
 
@@ -35,6 +38,27 @@ class IntField(Field):
 
     def transform_in(self, value):
         return int(value)
+
+
+class BooleanField(Field):
+    def __init__(self, default=None, private=False):
+        super().__init__(default, private)
+
+    def transform_in(self, value):
+        if value == 'true':
+            value = True
+        elif value == 'false':
+            value = False
+        return bool(value)
+
+
+class UnixTimestampField(Field):
+    def __init__(self, default=None, private=False):
+        super().__init__(default, private)
+
+    def transform_in(self, value):
+        value = int(value)
+        return datetime.datetime.fromtimestamp(value)
 
 
 class IntEnumField(Field):
@@ -191,3 +215,9 @@ class Model(JsonSerializable, metaclass=ModelMetaclass):
         if d is None:
             return None
         return cls(**d)
+
+    @classmethod
+    def parse_list(cls, l: list):
+        if l is None or len(l) == 0:
+            return []
+        return list(map(lambda d: cls(**d), l))

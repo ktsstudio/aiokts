@@ -10,7 +10,6 @@ sentinel = object()
 
 class KtsHttpApplication(web.Application):
     ROUTES = []
-    SERVER_CLS = KtsServer
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -38,6 +37,9 @@ class KtsHttpApplication(web.Application):
     def make_context(self, request):
         return Context(request)
 
+    def make_server(self, *, server_cls=KtsServer, **kwargs):
+        return server_cls(**kwargs)
+
     def make_handler(self, *, loop=None,
                      secure_proxy_ssl_header=None, **kwargs):
         self._set_loop(loop)
@@ -49,6 +51,6 @@ class KtsHttpApplication(web.Application):
                 kwargs[k] = v
 
         self._secure_proxy_ssl_header = secure_proxy_ssl_header
-        return self.SERVER_CLS(self._handle,
-                               request_factory=self._make_request,
-                               loop=self.loop, **kwargs)
+        return self.make_server(handler=self._handle,
+                                request_factory=self._make_request,
+                                loop=self.loop, **kwargs)
