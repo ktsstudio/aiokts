@@ -19,7 +19,7 @@ class ListArg(Argument):
             validator_message = 'must be list with max_count = {}.'.format(max_count)
         else:
             pass
-        
+
         super().__init__(
             required=required,
             type=list,
@@ -126,6 +126,7 @@ class StringArg(Argument):
             required=required,
             type=str,
             filter=filter,
+            default=default,
             validator=(lambda x: len(x) > 0) if not allow_empty else None,
             validator_message='must be non-empty string' if not allow_empty else None
         )
@@ -163,7 +164,7 @@ class ListOfArg(Argument):
         if argument_inst is not None:
             if not isinstance(argument_inst, Argument):
                 raise ArgumentException("ListOfArg's argument_type must be an instance of Argument class")
-            
+
             if callable(argument_inst.validator):
                 def validator(x):
                     for i, el in enumerate(x):
@@ -173,14 +174,14 @@ class ListOfArg(Argument):
                                 "Validation for element #{} failed: {}".format(i, argument_inst.validator_message)
                             return False
                         return True
-            
+
             if callable(argument_inst.filter):
                 def filter(x):
                     filtered = []
                     for el in x:
                         filtered.append(argument_inst.filter(el))
                     return filtered
-        
+
         super().__init__(
             required=required,
             type=list,
@@ -221,20 +222,20 @@ class DictWithSchemaArg(Argument):
             ...
         }
     """
-    
+
     def __init__(self, schema, required=True, max_size=None):
         if schema is None:
             raise ArgumentException("Schema cannot be None in {}".format(str(self.__class__)))
-        
+
         validator = None
         if max_size is not None:
             def validator(d):
                 self.validator_message = 'Dict size must be less than {}'.format(max_size)
                 return len(d) <= max_size
-        
+
         def filter(d):
             return check_arguments(schema, d)
-        
+
         super().__init__(
             required=required,
             type=dict,
@@ -252,17 +253,17 @@ class ListWithSchemaArg(Argument):
             ...
         }
     """
-    
+
     def __init__(self, schema, required=True, max_size=None, empty_is_none=False, default=None):
         if schema is None:
             raise ArgumentException("Schema cannot be None in {}".format(str(self.__class__)))
-        
+
         validator = None
         if max_size is not None:
             def validator(l):
                 self.validator_message = 'List size must be less than {}'.format(max_size)
                 return len(l) <= max_size
-        
+
         def filter(l):
             if empty_is_none and len(l) == 0:
                 return None
@@ -271,7 +272,7 @@ class ListWithSchemaArg(Argument):
                 el = check_arguments(schema, el)
                 filtered.append(el)
             return filtered
-        
+
         super().__init__(
             required=required,
             type=list,
@@ -307,13 +308,13 @@ class ListOfDictsArg(Argument):
                         self.validator_message = "all elements must be dicts (failed on element #{})".format(i)
                         return False
                 return True
-        
+
         if empty_is_none:
             def filter(l):
                 return None if len(l) == 0 else l
         else:
             filter = None
-        
+
         super().__init__(
             required=required,
             type=list,
