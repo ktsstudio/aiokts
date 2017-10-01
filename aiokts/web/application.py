@@ -12,14 +12,8 @@ class KtsHttpApplication(web.Application):
     ROUTES = []
 
     def __init__(self, **kwargs):
-        super().__init__(
-            logger=kwargs.get('logger', web_logger),
-            loop=kwargs.get('loop'),
-            router=kwargs.get('router'),
-            middlewares=kwargs.get('middlewares', ()),
-            debug=kwargs.get('debug', False),
-            client_max_size=kwargs.get('client_max_size', 1024**2)
-        )
+        kwargs['debug'] = kwargs.get('debug', False)
+        super().__init__(**kwargs)
 
         for route in self.ROUTES:
             method, path, view_cls = route
