@@ -28,7 +28,7 @@ class KtsWebContainer(api_hour.Container):
     def __init__(self, application=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger(__name__)
-        self._store = None
+        self._store = self.make_store()
         self._store_connect_coro = None
 
         self._application = None
@@ -76,7 +76,6 @@ class KtsWebContainer(api_hour.Container):
                      need=self.STORE_NEED, loop=self.loop)
 
     async def store_connect(self):
-        self._store = self.make_store()
         if self._store is None:
             return
 
