@@ -54,8 +54,11 @@ class BaseView(web.View):
                 except json.JSONDecodeError:
                     raise ServerError(ServerError.BAD_REQUEST(
                         message='Body must be a valid json'))
-            else:
+            elif self.request.content_type.startswith(
+                    'application/x-www-form-urlencoded'):
                 source = await self.request.post()
+            else:
+                source = None
         self.request_data = source
 
     async def pre_handle(self):
