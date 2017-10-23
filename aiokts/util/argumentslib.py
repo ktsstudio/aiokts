@@ -192,7 +192,8 @@ class ListOfArg(Argument):
 
 
 class DictArg(Argument):
-    def __init__(self, required=True, required_fields=None, filter=None):
+    def __init__(self, required=True, required_fields=None, filter=None,
+                 default=None):
         if required_fields is not None:
             def validator(x):
                 missing_fields = []
@@ -208,6 +209,7 @@ class DictArg(Argument):
         super().__init__(
             required=required,
             type=dict,
+            default=default,
             filter=filter,
             validator=validator,
             validator_message=None
