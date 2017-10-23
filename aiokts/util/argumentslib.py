@@ -1,3 +1,8 @@
+import tempfile
+
+from aiohttp import hdrs
+from aiohttp.web_request import FileField
+
 from aiokts.util.arguments import Argument, ArgumentException, check_arguments
 
 
@@ -344,4 +349,46 @@ class ListOfDictsArg(Argument):
             filter=filter,
             validator=validator,
             validator_message=None
+        )
+
+
+class MultipartFileArg(Argument):
+    def __init__(self, required=True):
+        async def to_type(obj):
+            content_type = obj.headers.get(hdrs.CONTENT_TYPE)
+            tmp = tempfile.TemporaryFile()
+            chunk = await obj.read_chunk(size=2 ** 16)
+            while chunk:
+                chunk = obj.decode(chunk)
+                tmp.write(chunk)
+                chunk = await obj.read_chunk(size=2 ** 16)
+            tmp.seek(0)
+
+            value = FileField(obj.name, obj.filename,
+                              tmp, content_type, obj.headers)
+            return value
+
+        super().__init__(
+            required=required,
+            type=FileField,
+            to_type=to_type
+        )
+
+
+class MultipartStringArg(Argument):
+    def __init__(self, required=True):
+        async def to_type(obj):
+            content_type = obj.headers.get(hdrs.CONTENT_TYPE)
+            value = await obj.read(decode=True)
+
+            if content_type is None or \
+                    content_type.startswith('text/'):
+                charset = obj.get_charset(default='utf-8')
+                value = value.decode(charset)
+            return value
+
+        super().__init__(
+            required=required,
+            type=str,
+            to_type=to_type
         )
