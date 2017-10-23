@@ -2,7 +2,7 @@ from aiokts.util.arguments import Argument, ArgumentException, check_arguments
 
 
 class ListArg(Argument):
-    def __init__(self, required=True, default=[], allow_empty=False, max_count=None):
+    def __init__(self, required=True, default=None, allow_empty=False, max_count=None):
         validator = None
         validator_message = ''
         if not allow_empty and max_count is None:
@@ -23,7 +23,7 @@ class ListArg(Argument):
         super().__init__(
             required=required,
             type=list,
-            default=default,
+            default=default if default is not None else [],
             validator=validator,
             validator_message=validator_message,
             filter=None
@@ -31,11 +31,11 @@ class ListArg(Argument):
 
 
 class StringListArg(Argument):
-    def __init__(self, allowed_fields=None, required=True, default=[], allow_empty=False):
+    def __init__(self, allowed_fields=None, required=True, default=None, allow_empty=False):
         super().__init__(
             required=required,
             type=list,
-            default=default,
+            default=default if default is not None else [],
             validator=(lambda x: len(x) > 0) if not allow_empty else None,
             validator_message='must be non-empty list. Valid fields: "%s"' % (
                 '", "'.join(allowed_fields)) if allowed_fields is not None else '',
