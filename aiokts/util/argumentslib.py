@@ -176,7 +176,7 @@ class ListOfArg(Argument):
                             return False
                     else:
                         try:
-                            el = argument_inst.type(el)
+                            argument_inst.to_type(el)
                         except Exception as e:
                             self.validator_message = ('Casting element #{} '
                                                       'to type `{}` (which has type `{}`) '
@@ -186,7 +186,8 @@ class ListOfArg(Argument):
                             return False
 
                     if callable(argument_inst.validator):
-                        validation_res = argument_inst.validator(argument_inst.type(el))
+                        # Casting to type anyway (in order to validate)
+                        validation_res = argument_inst.validator(argument_inst.to_type(el))
                         if not validation_res:
                             self.validator_message = ("Validation for "
                                                       "element #{} failed: {}"
