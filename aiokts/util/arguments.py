@@ -6,10 +6,14 @@ _sentinel = object()
 class Argument:
     def __init__(self, required=False, default=None, type=None, to_type=None,
                  validator=None, validator_message='', filter=None):
+        if to_type is None:
+            async def to_type(obj):
+                return type(obj)
+
         self.required = required
         self.default = default
         self.type = type
-        self.to_type = to_type if to_type else type
+        self.to_type = to_type
         self.validator = validator
         self.validator_message = validator_message
         self.filter = filter
@@ -86,56 +90,70 @@ def arguments(arglist):
     return _arguments
 
 
-def check_arguments(arglist, kwargs, *, cast_type=False):
+async def check_argument(arg_name, arg_definition, kwargs, cast_type):
+    if not isinstance(arg_definition, Argument):
+        raise ArgumentException(None,
+                                '@arguments expects arg definition as a dict with `Argument` class values')
+
+    # check argument existence
+    is_default_value = False
+    if arg_name not in kwargs and arg_definition.required:
+        raise ArgumentException(arg_name,
+                                '`%s` argument is required' % arg_name)
+    else:
+        # not required argument is not specified
+        arg_value = kwargs.get(arg_name)
+        if arg_value is None:
+            if arg_definition.default is not None:
+                arg_value = arg_definition.default
+                is_default_value = True
+            else:
+                arg_value = None
+
+    # check argument type
+    if arg_definition.type is not None and arg_value is not None:  # None means "any type, do not check"
+        if not cast_type:
+            if not isinstance(arg_value, arg_definition.type):
+                raise ArgumentException(arg_name,
+                                        '`%s` must be `%s`, but got `%s`' %
+                                        (arg_name, str(arg_definition.type),
+                                         str(type(arg_value))))
+        else:
+            try:
+                arg_value = await arg_definition.to_type(arg_value)
+            except Exception as e:
+                raise ArgumentException(arg_name,
+                                        'Casting `%s` to type `%s` (which has type `%s`) failed: `%s`' %
+                                        (arg_name, str(arg_definition.type),
+                                         str(type(arg_value)), str(e))) from e
+
+    # filter value
+    if arg_value is not None and callable(arg_definition.filter):
+        arg_value = arg_definition.filter(arg_value)
+
+    # validate value
+    if arg_value is not None and callable(arg_definition.validator):
+        if not arg_definition.validator(arg_value):
+            raise ArgumentException(arg_name,
+                                    '%svalue `%s` for argument `%s` was rejected by validator: `%s`' %
+                                    ('default ' if is_default_value else '',
+                                     str(arg_value),
+                                     arg_name,
+                                     str(arg_definition.validator_message)))
+
+    return arg_value
+
+
+async def check_arguments(arglist, kwargs, *, cast_type=False):
     if not isinstance(arglist, dict):
         raise ArgumentException(None, '@arguments expects arg definition as a dict with `Argument` class values')
 
     filtered_kwargs = {}
     for arg_name, arg_definition in arglist.items():
-        if not isinstance(arg_definition, Argument):
-            raise ArgumentException(None, '@arguments expects arg definition as a dict with `Argument` class values')
-
-        # check argument existence
-        is_default_value = False
-        if arg_name not in kwargs and arg_definition.required:
-            raise ArgumentException(arg_name, '`%s` argument is required' % arg_name)
-        else:
-            # not required argument is not specified
-            arg_value = kwargs.get(arg_name)
-            if arg_value is None:
-                if arg_definition.default is not None:
-                    arg_value = arg_definition.default
-                    is_default_value = True
-                else:
-                    arg_value = None
-
-        # check argument type
-        if arg_definition.type is not None and arg_value is not None:  # None means "any type, do not check"
-            if not cast_type:
-                if not isinstance(arg_value, arg_definition.type):
-                    raise ArgumentException(arg_name,
-                                            '`%s` must be `%s`, but got `%s`' %
-                                            (arg_name, str(arg_definition.type), str(type(arg_value))))
-            else:
-                try:
-                    arg_value = arg_definition.to_type(arg_value)
-                except Exception as e:
-                    raise ArgumentException(arg_name,
-                                            'Casting `%s` to type `%s` (which has type `%s`) failed: `%s`' %
-                                            (arg_name, str(arg_definition.type), str(type(arg_value)), str(e))) from e
-
-        # filter value
-        if arg_value is not None and callable(arg_definition.filter):
-            arg_value = arg_definition.filter(arg_value)
-
-        # validate value
-        if arg_value is not None and callable(arg_definition.validator):
-            if not arg_definition.validator(arg_value):
-                raise ArgumentException(arg_name,
-                                        '%svalue `%s` for argument `%s` was rejected by validator: `%s`' %
-                                        ('default ' if is_default_value else '', str(arg_value),
-                                         arg_name,
-                                         str(arg_definition.validator_message)))
+        arg_value = await check_argument(arg_name=arg_name,
+                                         arg_definition=arg_definition,
+                                         kwargs=kwargs,
+                                         cast_type=cast_type)
 
         # all checks passed
         filtered_kwargs[arg_name] = arg_value
