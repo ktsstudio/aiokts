@@ -158,22 +158,42 @@ class EmailArg(Argument):
 
 
 class ListOfArg(Argument):
-    def __init__(self, required=True, argument_inst=None):
+    def __init__(self, required=True, argument_inst=None, cast_type=False):
         validator = None
         filter = None
         if argument_inst is not None:
             if not isinstance(argument_inst, Argument):
                 raise ArgumentException("ListOfArg's argument_type must be an instance of Argument class")
 
-            if callable(argument_inst.validator):
-                def validator(x):
-                    for i, el in enumerate(x):
-                        validation_res = argument_inst.validator(el)
-                        if not validation_res:
-                            self.validator_message = \
-                                "Validation for element #{} failed: {}".format(i, argument_inst.validator_message)
+            def validator(x):
+                for i, el in enumerate(x):
+                    if not cast_type:
+                        if not isinstance(el, argument_inst.type):
+                            self.validator_message = ('Element #{} must be `{}`,'
+                                                      ' but got `{}`'
+                                                      .format(i, str(argument_inst.type),
+                                                              str(type(el))))
                             return False
-                        return True
+                    else:
+                        try:
+                            el = argument_inst.type(el)
+                        except Exception as e:
+                            self.validator_message = ('Casting element #{} '
+                                                      'to type `{}` (which has type `{}`) '
+                                                      'failed: `{}`'
+                                                      .format(i, str(argument_inst.type),
+                                                              str(type(el)), str(e)))
+                            return False
+
+                    if callable(argument_inst.validator):
+                        validation_res = argument_inst.validator(argument_inst.type(el))
+                        if not validation_res:
+                            self.validator_message = ("Validation for "
+                                                      "element #{} failed: {}"
+                                                      .format(i,
+                                                              argument_inst.validator_message))
+                            return False
+                return True
 
             if callable(argument_inst.filter):
                 def filter(x):
