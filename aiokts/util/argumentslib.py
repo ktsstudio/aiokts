@@ -383,7 +383,7 @@ class MultipartFileArg(Argument):
             required=required,
             type=FileField,
             to_type=to_type,
-            validator=((lambda x: x.split(".")[-1].lower()
+            validator=((lambda x: x.filename.split(".")[-1].lower()
                                   in map(lambda f: f.lower(), allowed_formats))
                        if allowed_formats is not None else None),
             validator_message=("Allowed formats are {}".format(", ".join(allowed_formats))
