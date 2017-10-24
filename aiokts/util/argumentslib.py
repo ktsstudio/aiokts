@@ -112,28 +112,36 @@ class FlagsArg(Argument):
 
 
 class StringArg(Argument):
-    def __init__(self, required=True, strip=True, allow_empty=False, empty_is_none=False, default=None):
+
+    @staticmethod
+    def empty_filter(x):
+        return None if x == '' else x
+
+    @staticmethod
+    def filter(strip: bool, empty_is_none: bool):
         if strip:
-            if empty_is_none:
-                def filter(x):
-                    x = x.strip()
-                    return None if x == '' else x
-            else:
-                def filter(x):
-                    return x.strip()
+            return ((lambda x: StringArg.empty_filter(x.strip()))
+                    if empty_is_none
+                    else (lambda x: x.strip()))
         else:
-            if empty_is_none:
-                def filter(x):
-                    return None if x == '' else x
-            else:
-                filter = None
+            return StringArg.empty_filter if empty_is_none else None
+
+    @staticmethod
+    def validator(allow_empty):
+        return lambda x: len(x) > 0 if not allow_empty else None
+
+    @staticmethod
+    def validator_message(allow_empty):
+        return 'Must be a non-empty string' if not allow_empty else None
+
+    def __init__(self, required=True, strip=True, allow_empty=False, empty_is_none=False, default=None):
         super().__init__(
             required=required,
             type=str,
-            filter=filter,
+            filter=self.filter(strip=strip, empty_is_none=empty_is_none),
             default=default,
-            validator=(lambda x: len(x) > 0) if not allow_empty else None,
-            validator_message='must be non-empty string' if not allow_empty else None
+            validator=self.validator(allow_empty=allow_empty),
+            validator_message=self.validator_message(allow_empty=allow_empty)
         )
 
 
@@ -353,8 +361,11 @@ class ListOfDictsArg(Argument):
 
 
 class MultipartFileArg(Argument):
-    def __init__(self, required=True):
+    def __init__(self, required=True, allowed_formats=None):
         async def to_type(obj):
+            if not obj.filename:
+                raise ArgumentException("File argument should have a filename")
+
             content_type = obj.headers.get(hdrs.CONTENT_TYPE)
             tmp = tempfile.TemporaryFile()
             chunk = await obj.read_chunk(size=2 ** 16)
@@ -371,12 +382,19 @@ class MultipartFileArg(Argument):
         super().__init__(
             required=required,
             type=FileField,
-            to_type=to_type
+            to_type=to_type,
+            validator=((lambda x: x.split(".")[-1].lower()
+                                  in map(lambda f: f.lower(), allowed_formats))
+                       if allowed_formats is not None else None),
+            validator_message=("Allowed formats are {}".format(", ".join(allowed_formats))
+                               if allowed_formats is not None
+                               else None)
         )
 
 
 class MultipartStringArg(Argument):
-    def __init__(self, required=True):
+    def __init__(self, required=True, strip=True, allow_empty=False,
+                 empty_is_none=False, default=None):
         async def to_type(obj):
             content_type = obj.headers.get(hdrs.CONTENT_TYPE)
             value = await obj.read(decode=True)
@@ -390,5 +408,9 @@ class MultipartStringArg(Argument):
         super().__init__(
             required=required,
             type=str,
-            to_type=to_type
+            to_type=to_type,
+            filter=StringArg.filter(strip=strip, empty_is_none=empty_is_none),
+            default=default,
+            validator=StringArg.validator_message(allow_empty=allow_empty),
+            validator_message=StringArg.validator_message(allow_empty=allow_empty)
         )
