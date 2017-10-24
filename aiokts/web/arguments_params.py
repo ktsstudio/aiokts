@@ -3,8 +3,8 @@ import json
 
 from aiohttp import MultipartReader
 
-from aiokts.util.arguments import check_arguments, check_argument
-from aiokts.util.argumentslib import MultipartStringArg, MultipartFileArg
+from aiokts.util.arguments import check_arguments, check_argument, \
+    ArgumentException
 from aiokts.web.error import ServerError
 
 
@@ -108,7 +108,7 @@ def arguments_params_multipart(arglist=None):
                 if part is None:
                     break
 
-                if part.name in arglist.keys():
+                if part.name in arglist:
                     arg_definition = arglist[part.name]
                     arg = await check_argument(arg_name=part.name,
                                                arg_definition=arg_definition,
@@ -118,6 +118,13 @@ def arguments_params_multipart(arglist=None):
                     # TODO: check sizes or leave it to nginx?
 
                     args[part.name] = arg
+
+            for arg_name in filter(lambda a: arglist[a].required is True,
+                                   arglist):
+                if arg_name not in args:
+                    raise ArgumentException(field=arg_name,
+                                            message='`{}` argument is required'
+                                                    .format(arg_name))
 
             return await func(self, **args)
 
