@@ -77,7 +77,7 @@ class KtsRequestHandler(RequestHandler):
                 message=error.message,
                 data=error.payload
             )
-            msg = json_dumps(data).encode()
+            msg = json_dumps(data)
             content_type = 'application/json'
         else:
             msg = message
