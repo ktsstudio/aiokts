@@ -4,16 +4,17 @@ _sentinel = object()
 
 
 class Argument:
+
+    async def to_type(self, obj):
+        return self.type(obj)
+
     def __init__(self, required=False, default=None, type=None, to_type=None,
                  validator=None, validator_message='', filter=None):
-        if to_type is None:
-            async def to_type(obj):
-                return type(obj)
-
         self.required = required
         self.default = default
         self.type = type
-        self.to_type = to_type
+        if to_type is not None:
+            self.to_type = to_type
         self.validator = validator
         self.validator_message = validator_message
         self.filter = filter

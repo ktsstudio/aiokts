@@ -386,31 +386,73 @@ class MultipartFileArg(Argument):
             validator=((lambda x: x.filename.split(".")[-1].lower()
                                   in map(lambda f: f.lower(), allowed_formats))
                        if allowed_formats is not None else None),
-            validator_message=("Allowed formats are {}".format(", ".join(allowed_formats))
+            validator_message=("Allowed formats are: ({})".format(", ".join(allowed_formats))
                                if allowed_formats is not None
                                else None)
         )
 
 
-class MultipartStringArg(Argument):
+class MultipartArg(Argument):
+
+    async def to_type(self, obj):
+        content_type = obj.headers.get(hdrs.CONTENT_TYPE)
+        value = await obj.read(decode=True)
+
+        if content_type is None or \
+                content_type.startswith('text/'):
+            charset = obj.get_charset(default='utf-8')
+            value = value.decode(charset)
+        return value
+
+
+class MultipartStringArg(MultipartArg):
     def __init__(self, required=True, strip=True, allow_empty=False,
                  empty_is_none=False, default=None):
-        async def to_type(obj):
-            content_type = obj.headers.get(hdrs.CONTENT_TYPE)
-            value = await obj.read(decode=True)
-
-            if content_type is None or \
-                    content_type.startswith('text/'):
-                charset = obj.get_charset(default='utf-8')
-                value = value.decode(charset)
-            return value
 
         super().__init__(
             required=required,
             type=str,
-            to_type=to_type,
             filter=StringArg.filter(strip=strip, empty_is_none=empty_is_none),
             default=default,
             validator=StringArg.validator_message(allow_empty=allow_empty),
             validator_message=StringArg.validator_message(allow_empty=allow_empty)
+        )
+
+
+class MultipartIntArg(MultipartArg):
+
+    async def to_type(self, obj):
+        return int(await super().to_type(obj))
+
+    def __init__(self, required=True, default=0):
+        super().__init__(
+            required=required,
+            type=int,
+            default=default
+        )
+
+
+class MultipartFloatArg(MultipartArg):
+
+    async def to_type(self, obj):
+        return float(await super().to_type(obj))
+
+    def __init__(self, required=True, default=0.0):
+        super().__init__(
+            required=required,
+            type=float,
+            default=default
+        )
+
+
+class MultipartBoolArg(Argument):
+
+    async def to_type(self, obj):
+        return bool(await super().to_type(obj))
+
+    def __init__(self, required=True, default=False):
+        super().__init__(
+            required=required,
+            type=bool,
+            default=default
         )
