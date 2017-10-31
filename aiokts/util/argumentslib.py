@@ -2,7 +2,7 @@ from aiokts.util.arguments import Argument, ArgumentException, check_arguments
 
 
 class ListArg(Argument):
-    def __init__(self, required=True, default=[], allow_empty=False, max_count=None):
+    def __init__(self, required=True, default=None, allow_empty=False, max_count=None):
         validator = None
         validator_message = ''
         if not allow_empty and max_count is None:
@@ -23,7 +23,7 @@ class ListArg(Argument):
         super().__init__(
             required=required,
             type=list,
-            default=default,
+            default=default if default is not None else [],
             validator=validator,
             validator_message=validator_message,
             filter=None
@@ -31,11 +31,11 @@ class ListArg(Argument):
 
 
 class StringListArg(Argument):
-    def __init__(self, allowed_fields=None, required=True, default=[], allow_empty=False):
+    def __init__(self, allowed_fields=None, required=True, default=None, allow_empty=False):
         super().__init__(
             required=required,
             type=list,
-            default=default,
+            default=default if default is not None else [],
             validator=(lambda x: len(x) > 0) if not allow_empty else None,
             validator_message='must be non-empty list. Valid fields: "%s"' % (
                 '", "'.join(allowed_fields)) if allowed_fields is not None else '',
@@ -158,22 +158,43 @@ class EmailArg(Argument):
 
 
 class ListOfArg(Argument):
-    def __init__(self, required=True, argument_inst=None):
+    def __init__(self, required=True, argument_inst=None, cast_type=False):
         validator = None
         filter = None
         if argument_inst is not None:
             if not isinstance(argument_inst, Argument):
                 raise ArgumentException("ListOfArg's argument_type must be an instance of Argument class")
 
-            if callable(argument_inst.validator):
-                def validator(x):
-                    for i, el in enumerate(x):
-                        validation_res = argument_inst.validator(el)
-                        if not validation_res:
-                            self.validator_message = \
-                                "Validation for element #{} failed: {}".format(i, argument_inst.validator_message)
+            def validator(x):
+                for i, el in enumerate(x):
+                    if not cast_type:
+                        if not isinstance(el, argument_inst.type):
+                            self.validator_message = ('Element #{} must be `{}`,'
+                                                      ' but got `{}`'
+                                                      .format(i, str(argument_inst.type),
+                                                              str(type(el))))
                             return False
-                        return True
+                    else:
+                        try:
+                            argument_inst.to_type(el)
+                        except Exception as e:
+                            self.validator_message = ('Casting element #{} '
+                                                      'to type `{}` (which has type `{}`) '
+                                                      'failed: `{}`'
+                                                      .format(i, str(argument_inst.type),
+                                                              str(type(el)), str(e)))
+                            return False
+
+                    if callable(argument_inst.validator):
+                        # Casting to type anyway (in order to validate)
+                        validation_res = argument_inst.validator(argument_inst.to_type(el))
+                        if not validation_res:
+                            self.validator_message = ("Validation for "
+                                                      "element #{} failed: {}"
+                                                      .format(i,
+                                                              argument_inst.validator_message))
+                            return False
+                return True
 
             if callable(argument_inst.filter):
                 def filter(x):

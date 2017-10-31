@@ -4,10 +4,12 @@ _sentinel = object()
 
 
 class Argument:
-    def __init__(self, required=False, default=None, type=None, validator=None, validator_message='', filter=None):
+    def __init__(self, required=False, default=None, type=None, to_type=None,
+                 validator=None, validator_message='', filter=None):
         self.required = required
         self.default = default
         self.type = type
+        self.to_type = to_type if to_type else type
         self.validator = validator
         self.validator_message = validator_message
         self.filter = filter
@@ -35,7 +37,8 @@ def arguments(arglist):
     Пример использования:
     <pre>
     @arguments({
-        'arg_name': Argument(required=False, default=7, type=int, validator=lambda x: x > 5, validator_message='must be greater than 5'),
+        'arg_name': Argument(required=False, default=7, type=int, to_type=int,
+        validator=lambda x: x > 5, validator_message='must be greater than 5'),
         ...
     })
     def func(self, *args, **kwargs):
@@ -52,6 +55,9 @@ def arguments(arglist):
 
     - type
         Требуемый тип значения, или None если проверять не надо
+
+    - to_type
+        Функция, используемая для приведения к требуемому типу (по умолчанию берётся из type)
 
     - validator
         функция-валидатор, которая применяется к значению. Если возвращает не True, райзится эксепшн.
@@ -112,7 +118,7 @@ def check_arguments(arglist, kwargs, *, cast_type=False):
                                             (arg_name, str(arg_definition.type), str(type(arg_value))))
             else:
                 try:
-                    arg_value = arg_definition.type(arg_value)
+                    arg_value = arg_definition.to_type(arg_value)
                 except Exception as e:
                     raise ArgumentException(arg_name,
                                             'Casting `%s` to type `%s` (which has type `%s`) failed: `%s`' %
