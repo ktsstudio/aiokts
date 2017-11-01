@@ -3,7 +3,8 @@ import tempfile
 from aiohttp import hdrs
 from aiohttp.web_request import FileField
 
-from aiokts.util.arguments import Argument, ArgumentException, check_arguments
+from aiokts.util.arguments import Argument, ArgumentException, check_arguments, \
+    AsyncArgument
 
 
 class ListArg(Argument):
@@ -360,19 +361,42 @@ class ListOfDictsArg(Argument):
         )
 
 
-class MultipartFileArg(Argument):
-    def __init__(self, required=True, allowed_formats=None):
+class MultipartArg(AsyncArgument):
+
+    @staticmethod
+    async def to_type(obj):
+        content_type = obj.headers.get(hdrs.CONTENT_TYPE)
+        value = await obj.read(decode=True)
+
+        if content_type is None or \
+                content_type.startswith('text/'):
+            charset = obj.get_charset(default='utf-8')
+            value = value.decode(charset)
+        return value
+
+
+class MultipartFileArg(MultipartArg):
+    def __init__(self, required=True, allowed_formats=None,
+                 max_size=0, chunk_size=2**16):
+
         async def to_type(obj):
             if not obj.filename:
                 raise ArgumentException("File argument should have a filename")
 
             content_type = obj.headers.get(hdrs.CONTENT_TYPE)
+            # Saving file from multipart to a temporary file.
+            # In order to prevent multiple disk writes, you may consider moving
+            # it to designated location using 'os.rename()' or 'shutil.move()'
             tmp = tempfile.TemporaryFile()
-            chunk = await obj.read_chunk(size=2 ** 16)
+            size = 0
+            chunk = await obj.read_chunk(size=chunk_size)
             while chunk:
+                if 0 < max_size < size:
+                    raise ValueError('Maximum file size exceeded')
+
                 chunk = obj.decode(chunk)
                 tmp.write(chunk)
-                chunk = await obj.read_chunk(size=2 ** 16)
+                chunk = await obj.read_chunk(size=chunk_size)
             tmp.seek(0)
 
             value = FileField(obj.name, obj.filename,
@@ -392,19 +416,6 @@ class MultipartFileArg(Argument):
         )
 
 
-class MultipartArg(Argument):
-
-    async def to_type(self, obj):
-        content_type = obj.headers.get(hdrs.CONTENT_TYPE)
-        value = await obj.read(decode=True)
-
-        if content_type is None or \
-                content_type.startswith('text/'):
-            charset = obj.get_charset(default='utf-8')
-            value = value.decode(charset)
-        return value
-
-
 class MultipartStringArg(MultipartArg):
     def __init__(self, required=True, strip=True, allow_empty=False,
                  empty_is_none=False, default=None):
@@ -421,7 +432,8 @@ class MultipartStringArg(MultipartArg):
 
 class MultipartIntArg(MultipartArg):
 
-    async def to_type(self, obj):
+    @staticmethod
+    async def to_type(obj):
         return int(await super().to_type(obj))
 
     def __init__(self, required=True, default=0):
@@ -434,7 +446,8 @@ class MultipartIntArg(MultipartArg):
 
 class MultipartFloatArg(MultipartArg):
 
-    async def to_type(self, obj):
+    @staticmethod
+    async def to_type(obj):
         return float(await super().to_type(obj))
 
     def __init__(self, required=True, default=0.0):
@@ -445,9 +458,10 @@ class MultipartFloatArg(MultipartArg):
         )
 
 
-class MultipartBoolArg(Argument):
+class MultipartBoolArg(MultipartArg):
 
-    async def to_type(self, obj):
+    @staticmethod
+    async def to_type(obj):
         return bool(await super().to_type(obj))
 
     def __init__(self, required=True, default=False):
