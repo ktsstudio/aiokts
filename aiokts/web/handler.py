@@ -12,11 +12,11 @@ class KtsAccessLogger(AccessLogger):
     def log_request(self, ctx, message, environ, response, transport, time):
         """Log access.
 
-        :param ctx: Requset context
+        :param ctx: Request context
         :param message: Request object. May be None.
         :param environ: Environment dict. May be None.
         :param response: Response object.
-        :param transport: Tansport object. May be None
+        :param transport: Transport object. May be None
         :param float time: Time taken to serve the request.
         """
 
