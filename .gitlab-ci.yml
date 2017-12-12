@@ -1,6 +1,6 @@
 publish:
-#  only:
-#    - tags
+  only:
+    - tags
   script:
     - curl -O https://bootstrap.pypa.io/get-pip.py
     - python3.5 get-pip.py
