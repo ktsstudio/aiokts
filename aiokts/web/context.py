@@ -47,7 +47,8 @@ class Context(object):
         'hash',
         'logger',
         '_data',
-        '_cache'
+        '_cache',
+        '__weakref__',
     ]
 
     def __init__(self, request):
@@ -87,11 +88,11 @@ class Context(object):
     @reify
     def log_prepend(self):
         """
-            This property can return a string that will be prepended to 
+            This property can return a string that will be prepended to
             a log string (to the start)
-            
-            In base Context it has @reify decorator from aiohttp to cache 
-            the result indefinitely, but if you subclass Context you are 
+
+            In base Context it has @reify decorator from aiohttp to cache
+            the result indefinitely, but if you subclass Context you are
             allowed to use whatever @property decorator you want
         """
         return '[ctx:{}] '.format(self.hash)
@@ -99,11 +100,11 @@ class Context(object):
     @reify
     def log_append(self):
         """
-            This property can return a string that will be appended to 
+            This property can return a string that will be appended to
             a log string (to the end)
 
-            In base Context it has @reify decorator from aiohttp to cache 
-            the result indefinitely, but if you subclass Context you are 
+            In base Context it has @reify decorator from aiohttp to cache
+            the result indefinitely, but if you subclass Context you are
             allowed to use whatever @property decorator you want
         """
         return ''

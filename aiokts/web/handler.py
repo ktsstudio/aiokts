@@ -9,20 +9,17 @@ from aiokts.web.response import ApiErrorResponse, KtsResponse
 
 
 class KtsAccessLogger(AccessLogger):
-    def log_request(self, ctx, message, environ, response, transport, time):
+    def log_request(self, ctx, request, response, time):
         """Log access.
 
         :param ctx: Requset context
-        :param message: Request object. May be None.
-        :param environ: Environment dict. May be None.
+        :param request: Request object.
         :param response: Response object.
-        :param transport: Tansport object. May be None
         :param float time: Time taken to serve the request.
         """
 
         try:
-            fmt_info = self._format_line(
-                [message, environ, response, transport, time])
+            fmt_info = self._format_line(request, response, time)
 
             values = list()
             extra = dict()
@@ -48,21 +45,18 @@ class KtsRequestHandler(RequestHandler):
         if access_log:
             self.access_logger = KtsAccessLogger(access_log, access_log_format)
 
-    def log_access(self, message, environ, response, time):
+    def log_access(self, request, response, time):
         if self.access_logger:
             if not hasattr(response, 'ctx'):
-                self.access_logger.log(message, environ, response,
-                                       self.transport, time)
+                self.access_logger.log(request, response, time)
                 return
 
             ctx = response.ctx
             if ctx is None:
                 warnings.warn('Response\'s ctx attribute is None')
-                self.access_logger.log(message, environ, response,
-                                       self.transport, time)
+                self.access_logger.log(request, response, time)
             else:
-                self.access_logger.log_request(ctx, message, environ,
-                                               response, self.transport, time)
+                self.access_logger.log_request(ctx, request, response, time)
 
     def handle_error(self, request, status=500, exc=None, message=None):
         """Handle errors.
