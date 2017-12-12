@@ -2,6 +2,6 @@ publish:
   only:
     - tags
   script:
-    - yum install python3-setuptools
+    - yum install -y python3-setuptools
     - python3.5 setup.py register -r pypi
     - python3.5 setup.py sdist upload -r pypi
