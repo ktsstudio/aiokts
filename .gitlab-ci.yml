@@ -2,7 +2,8 @@ publish:
 #  only:
 #    - tags
   script:
-    - yum install -y python-setuptools
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python3.5 get-pip.py
     - python3.5 -mpip install -U pip setuptools
     - python3.5 setup.py register -r pypi
     - python3.5 setup.py sdist upload -r pypi
