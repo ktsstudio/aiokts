@@ -4,6 +4,6 @@ publish:
   script:
     - curl -O https://bootstrap.pypa.io/get-pip.py
     - python3.5 get-pip.py
-    - python3.5 -mpip install -U pip setuptools
-    - python3.5 setup.py register -r pypi
-    - python3.5 setup.py sdist upload -r pypi
+    - python3.5 -mpip install twine
+    - python3.5 setup.py sdist
+    - twine upload --username $TWINE_USERNAME --password $TWINE_PASSWORD dist/*
