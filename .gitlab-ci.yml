@@ -1,7 +1,8 @@
 publish:
-  only:
-    - tags
+#  only:
+#    - tags
   script:
     - yum install -y python-setuptools
+    - sudo pip install -U pip setuptools
     - python3.5 setup.py register -r pypi
     - python3.5 setup.py sdist upload -r pypi
