@@ -11,7 +11,7 @@ def arguments_params(arglist=None):
 
     def _arguments(func):
         @functools.wraps(func)
-        async def inner(self):
+        async def inner(self, *args, **kwargs):
             if self.request.method == 'GET':
                 source = self.request.url.query
             else:
@@ -23,8 +23,9 @@ def arguments_params(arglist=None):
                             message='Body must be a valid json'))
                 else:
                     source = await self.request.post()
-            args = check_arguments(arglist, source, cast_type=True)
-            return await func(self, **args)
+            checked_args = check_arguments(arglist, source, cast_type=True)
+            kwargs.update(checked_args)
+            return await func(self, *args, **kwargs)
 
         inner._has_arguments_ = True
         inner.arglist = arglist
@@ -39,10 +40,11 @@ def arguments_params_get(arglist=None):
 
     def _arguments(func):
         @functools.wraps(func)
-        def inner(self):
-            args = check_arguments(
+        def inner(self, *args, **kwargs):
+            checked_args = check_arguments(
                 arglist, self.request.url.query, cast_type=True)
-            return func(self, **args)
+            kwargs.update(checked_args)
+            return func(self, *args, **kwargs)
 
         inner._has_arguments_ = True
         inner.arglist = arglist
@@ -57,10 +59,11 @@ def arguments_params_post(arglist=None):
 
     def _arguments(func):
         @functools.wraps(func)
-        async def inner(self):
+        async def inner(self, *args, **kwargs):
             data = await self.request.post()
-            args = check_arguments(arglist, data, cast_type=True)
-            return await func(self, **args)
+            checked_args = check_arguments(arglist, data, cast_type=True)
+            kwargs.update(checked_args)
+            return await func(self, *args, **kwargs)
 
         inner._has_arguments_ = True
         inner.arglist = arglist
@@ -75,14 +78,15 @@ def arguments_params_json(arglist=None):
 
     def _arguments(func):
         @functools.wraps(func)
-        async def inner(self):
+        async def inner(self, *args, **kwargs):
             try:
                 data = await self.request.json()
             except json.JSONDecodeError:
                 raise ServerError(ServerError.BAD_REQUEST(
                     message='Body must be a valid json'))
-            args = check_arguments(arglist, data, cast_type=True)
-            return await func(self, **args)
+            checked_args = check_arguments(arglist, data, cast_type=True)
+            kwargs.update(checked_args)
+            return await func(self, *args, **kwargs)
 
         inner._has_arguments_ = True
         inner.arglist = arglist
