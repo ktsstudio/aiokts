@@ -98,6 +98,7 @@ class ApiResponse(RawApiResponse):
         self._api_extra = kwargs
 
         body = self.__class__.generate_response_dict(
+            api_status=self._api_status,
             data=self._api_data,
             **self._api_extra
         )
