@@ -136,8 +136,8 @@ class ApiOkResponse(ApiResponse):
                                             **kwargs)
 
     @staticmethod
-    def generate_response_dict(data=None, **extra):
-        return ApiResponse.generate_response_dict(api_status='ok',
+    def generate_response_dict(api_status='ok', data=None, **extra):
+        return ApiResponse.generate_response_dict(api_status=api_status,
                                                   data=data, **extra)
 
 
@@ -155,8 +155,9 @@ class ApiErrorResponse(ApiResponse):
                                                **kwargs)
 
     @staticmethod
-    def generate_response_dict(message=None, data=None, **extra):
+    def generate_response_dict(api_status='error', message=None, data=None,
+                               **extra):
         if message:
             extra['message'] = message
-        return ApiResponse.generate_response_dict(api_status='error',
+        return ApiResponse.generate_response_dict(api_status=api_status,
                                                   data=data, **extra)
