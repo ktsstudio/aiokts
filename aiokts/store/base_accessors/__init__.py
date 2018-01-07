@@ -13,6 +13,10 @@ class BaseAccessorException(Exception):
     pass
 
 
+class AccessorNotConnectedError(BaseAccessorException):
+    pass
+
+
 class BaseAccessor(object):
     DEFAULT_HOST = '127.0.0.1'
     DEFAULT_PORT = None
@@ -118,5 +122,18 @@ class BaseAccessor(object):
         pass
 
     @abc.abstractmethod
+    async def _disconnect(self):
+        pass
+
+
+class VirtualAccessor(BaseAccessor):
+    CHECK_CONFIG = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def _connect(self):
+        pass
+
     async def _disconnect(self):
         pass

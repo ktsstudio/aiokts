@@ -43,18 +43,18 @@ class Context(object):
 
     __slots__ = [
         '_request',
-        '_view',
-        'hash',
-        'logger',
+        '_hash',
+        '_logger',
         '_data',
+
         '_cache',
         '__weakref__',
     ]
 
     def __init__(self, request):
         self._request = weakref.ref(request) if request is not None else None
-        self.hash = self._generate_hash()
-        self.logger = ContextLogger(self)
+        self._hash = self._generate_hash()
+        self._logger = ContextLogger(self)
         self._data = self.CONTEXT_DATA_OBJECT_CLS()
 
         self._cache = {}
@@ -63,13 +63,14 @@ class Context(object):
     def request(self):
         return self._request() if self._request is not None else None
 
-    def log_request(self):
+    def log_request(self, immediate=False):
         if self._request is not None:
             if not self.request.query_string:
                 q = self.request.query_string
             else:
                 q = '?' + self.request.query_string
-            self.logger.info('Request {method} {path}{query}'.format(
+            self.logger.info('{pre}Request {method} {path}{query}'.format(
+                pre='(immediate log) ' if immediate else '',
                 method=self.request.method,
                 path=self.request.path,
                 query=q
@@ -82,8 +83,16 @@ class Context(object):
         return h
 
     @property
+    def hash(self):
+        return self._hash
+
+    @property
     def data(self):
         return self._data
+
+    @property
+    def logger(self):
+        return self._logger
 
     @reify
     def log_prepend(self):

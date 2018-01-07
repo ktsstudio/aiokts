@@ -69,11 +69,7 @@ class JsonResponse(KtsResponse):
         return body, status
 
 
-class RawApiResponse(JsonResponse):
-    pass
-
-
-class ApiResponse(RawApiResponse):
+class ApiResponse(JsonResponse):
     def __init__(self, status='ok', data=None, http_status=200, *,
                  headers=None, charset=None, json_dump_func=None, ctx=None,
                  **kwargs):

@@ -37,6 +37,7 @@ class BaseView(web.View):
         try:
             yield from self._parse_request()
             yield from self.pre_handle()
+            self.ctx.log_request()
             res = (yield from super(BaseView, self).__iter__())
             yield from self.post_handle(self.request, res)
             return res
@@ -178,6 +179,7 @@ class ActionBaseView(BaseView):
         try:
             yield from self._parse_request()
             yield from self.pre_handle()
+            self.ctx.log_request()
 
             action_title = self.request.match_info['method']
 

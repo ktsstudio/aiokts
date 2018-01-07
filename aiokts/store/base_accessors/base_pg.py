@@ -14,8 +14,8 @@ class BasePgAccessor(BaseAccessor):
     def db_name(self):
         return self.config['db']
 
-    async def acquire(self):
-        return await self._pool.acquire()
+    def acquire(self):
+        return self._pool.acquire()
 
     async def release(self, conn):
         return await self._pool.release(conn)
@@ -43,9 +43,9 @@ class BasePgAccessor(BaseAccessor):
         q, q_args = self.compile_q(query)
         if conn:
             return await getattr(conn, operation)(str(q), *q_args)
-        else:
-            async with self._pool.acquire() as conn:
-                return await getattr(conn, operation)(str(q), *q_args)
+
+        async with self.acquire() as conn:
+            return await getattr(conn, operation)(str(q), *q_args)
 
     async def execute(self, q, conn=None, *args, **kwargs):
         return await self._execute_operation("execute", q, conn,

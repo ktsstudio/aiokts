@@ -63,22 +63,20 @@ class KtsRequestHandler(RequestHandler):
 
             Returns HTTP response with specific status code. Logs additional
             information. It always closes current connection."""
-        self.log_exception("Error handling request", exc_info=exc)
+        request.ctx.exception("Error handling request", exc_info=exc)
 
-        if status == 500:
+        if status // 100 == 5:
             error = ServerError.INTERNAL_ERROR
-            data = ApiErrorResponse.generate_response_dict(
-                message=error.message,
-                data=error.payload
-            )
-            msg = json_dumps(data)
-            content_type = 'application/json'
+            resp = ApiErrorResponse(message=error.message,
+                                    data=error.payload,
+                                    http_status=status,
+                                    ctx=request.ctx)
         else:
-            msg = message
-            content_type = 'text/plain'
-
-        resp = KtsResponse(status=status, text=msg, content_type=content_type,
-                           charset='utf-8', ctx=request.ctx)
+            resp = KtsResponse(status=status,
+                               text=message,
+                               content_type='text/plain',
+                               charset='utf-8',
+                               ctx=request.ctx)
         resp.force_close()
 
         # some data already got sent, connection is broken
