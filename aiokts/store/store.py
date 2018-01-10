@@ -49,14 +49,12 @@ class Store(object):
             for location in locations:
                 if accessor_type_found is True:
                     break
+                module_name = '{}.{}'.format(location.__name__, accessor_type)
                 try:
-                    module = __import__(
-                        '{}.{}'.format(location.__name__, accessor_type),
-                        fromlist='dummy'
-                    )
+                    module = __import__(module_name, fromlist='dummy')
                     accessor_type_found = True
                 except ImportError as e:
-                    if accessor_type in str(e):
+                    if module_name in str(e):
                         accessor_type_found = False
                         continue
                     else:
