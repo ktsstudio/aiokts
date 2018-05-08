@@ -29,6 +29,9 @@ class Daemon(object):
     def check(self):
         pass
 
+    async def handle_exception(self, e):
+        pass
+
     async def start(self):
         self.check()
         self.logger.info('Starting daemon %s', self.name)
@@ -39,6 +42,7 @@ class Daemon(object):
             pass
         except Exception as e:
             logging.exception(e)
+            await self.handle_exception(e)
 
     async def stop(self):
         self.logger.info('Stopping %s daemon', self.name)
