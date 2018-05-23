@@ -107,7 +107,7 @@ class Settings:
     def parse_config(self, path=None):
         if path is None:
             path = self.config_path
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             return yaml.load(f)
 
     def setup_logging(self):
