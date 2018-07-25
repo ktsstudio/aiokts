@@ -1,9 +1,9 @@
 from aiohttp import web
-from aiohttp.log import web_logger
-from aiokts.web.request import KtsRequest
-from aiokts.web.server import KtsServer
 
 from aiokts.web.context import Context
+from aiokts.web.handler import KtsAccessLogger
+from aiokts.web.request import KtsRequest
+from aiokts.web.server import KtsServer
 
 sentinel = object()
 
@@ -34,8 +34,9 @@ class KtsHttpApplication(web.Application):
     def make_server(self, *, server_cls=KtsServer, **kwargs):
         return server_cls(**kwargs)
 
-    def make_handler(self, *, loop=None,
-                     secure_proxy_ssl_header=None, **kwargs):
+    def _make_handler(self, *, loop=None,
+                      access_log_class=KtsAccessLogger,
+                      **kwargs):
         self._set_loop(loop)
         self.freeze()
 
@@ -44,7 +45,7 @@ class KtsHttpApplication(web.Application):
             for k, v in self._handler_args.items():
                 kwargs[k] = v
 
-        self._secure_proxy_ssl_header = secure_proxy_ssl_header
         return self.make_server(handler=self._handle,
                                 request_factory=self._make_request,
+                                access_log_class=access_log_class,
                                 loop=self.loop, **kwargs)

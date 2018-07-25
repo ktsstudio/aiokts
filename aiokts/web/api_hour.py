@@ -49,7 +49,7 @@ class KtsWebContainer(api_hour.Container):
         if 'http' in self.servers:
             handler = self.servers['http'].make_handler(
                 logger=self.worker.log,
-                keep_alive=self.worker.cfg.keepalive,
+                access_log_class=KtsAccessLogger,
                 access_log=self.worker.log.access_log,
                 access_log_format=self.ACCESS_LOG_FORMAT
             )

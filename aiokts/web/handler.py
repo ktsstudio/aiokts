@@ -9,6 +9,8 @@ from aiokts.web.response import ApiErrorResponse, KtsResponse
 
 
 class KtsAccessLogger(AccessLogger):
+    KTS_LOG_FORMAT = '%a -> %r %s %b [%Tfs]'
+
     def log_request(self, ctx, request, response, time):
         """Log access.
 
@@ -38,20 +40,20 @@ class KtsAccessLogger(AccessLogger):
 
 class KtsRequestHandler(RequestHandler):
     def __init__(self, *args, **kwargs):
-        access_log = kwargs.get('access_log')
-        access_log_format = kwargs.get('access_log_format')
-        super(KtsRequestHandler, self).__init__(*args, **kwargs)
+        if 'access_log_class' not in kwargs:
+            kwargs['access_log_class'] = KtsAccessLogger
+        if 'access_log_format' not in kwargs:
+            kwargs['access_log_format'] = KtsAccessLogger.KTS_LOG_FORMAT
 
-        if access_log:
-            self.access_logger = KtsAccessLogger(access_log, access_log_format)
+        super(KtsRequestHandler, self).__init__(*args, **kwargs)
 
     def log_access(self, request, response, time):
         if self.access_logger:
-            if not hasattr(response, 'ctx'):
+            if not hasattr(request, 'ctx'):
                 self.access_logger.log(request, response, time)
                 return
 
-            ctx = response.ctx
+            ctx = request.ctx
             if ctx is None:
                 warnings.warn('Response\'s ctx attribute is None')
                 self.access_logger.log(request, response, time)
