@@ -5,6 +5,7 @@ import weakref
 import api_hour
 
 from aiokts.store import Store
+from aiokts.web import KtsAccessLogger
 from aiokts.web.application import KtsHttpApplication
 
 
