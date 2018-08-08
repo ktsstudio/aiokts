@@ -32,13 +32,12 @@ class BaseView(web.View):
     def loop(self):
         return self.app.loop
 
-    @asyncio.coroutine
-    def __iter__(self):
+    async def _iter(self):
         try:
-            yield from self._parse_request()
-            yield from self.pre_handle()
-            res = (yield from super(BaseView, self).__iter__())
-            yield from self.post_handle(self.request, res)
+            await self._parse_request()
+            await self.pre_handle()
+            res = await super(BaseView, self)._iter()
+            await self.post_handle(self.request, res)
             return res
         except Exception as e:
             res = self.handle_exception(e)
@@ -173,11 +172,10 @@ class ActionBaseView(BaseView):
     async def after_action(self):
         pass
 
-    @asyncio.coroutine
-    def __iter__(self):
+    async def _iter(self):
         try:
-            yield from self._parse_request()
-            yield from self.pre_handle()
+            await self._parse_request()
+            await self.pre_handle()
 
             action_title = self.request.match_info['method']
 
@@ -200,10 +198,10 @@ class ActionBaseView(BaseView):
                 executing_method = None
 
             if executing_method is not None:
-                yield from self.before_action()
-                result = yield from executing_method()
-                yield from self.after_action()
-                yield from self.post_handle(self.request, result)
+                await self.before_action()
+                result = await executing_method()
+                await self.after_action()
+                await self.post_handle(self.request, result)
                 return result
             else:
                 allowed_methods = []
