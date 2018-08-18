@@ -210,6 +210,10 @@ class Model(JsonSerializable, metaclass=ModelMetaclass):
             res[name] = v
         return res
 
+    def __repr__(self):
+        fields = ['{}={}'.format(k, getattr(self, k)) for k in self._fields]
+        return '<{} {}>'.format(self.__class__.__name__, ' '.join(fields))
+
     @classmethod
     def parse(cls, d: dict):
         if d is None:
