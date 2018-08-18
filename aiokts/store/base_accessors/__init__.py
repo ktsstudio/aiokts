@@ -42,6 +42,10 @@ class BaseAccessor(object):
             self.check_config()
 
     @property
+    def debug(self):
+        return self.store.debug
+
+    @property
     def store(self):
         return self._store() if self._store is not None else None
 

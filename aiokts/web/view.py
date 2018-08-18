@@ -32,6 +32,10 @@ class BaseView(web.View):
     def loop(self):
         return self.app.loop
 
+    @property
+    def debug(self):
+        return self.app.debug
+
     async def _iter(self):
         try:
             await self._parse_request()

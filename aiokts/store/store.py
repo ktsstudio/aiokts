@@ -8,7 +8,7 @@ class StoreException(Exception):
 
 
 class Store(object):
-    def __init__(self, config, need=None, loop=None):
+    def __init__(self, config, need=None, debug=False, loop=None):
         if loop is None:
             loop = asyncio.get_event_loop()
         self.loop = loop
@@ -16,11 +16,16 @@ class Store(object):
         self.config = self.check_config(config)
         self._need = None
         self.need(need)
+        self._debug = debug
 
         self._accessors = None
         self.init_store()
 
         self.__connect_coros = []
+
+    @property
+    def debug(self):
+        return self._debug
 
     def need(self, need=None):
         if need is not None:

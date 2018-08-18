@@ -20,9 +20,6 @@ class BaseManage(object):
     _commands = None
 
     def __init__(self):
-        self._config_dir = None
-        self._config_path = None
-        self._config = None
         self._logger = None
 
         assert self.commands_package_path is not None, \
@@ -47,6 +44,10 @@ class BaseManage(object):
     @property
     def config(self):
         return {}
+
+    @property
+    def debug(self):
+        return self.config.get('debug', False)
 
     def help(self):
         print('Available commands:\n - %s' % ('\n - '.join(self.commands)))

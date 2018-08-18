@@ -26,6 +26,10 @@ class Daemon(object):
     def config(self):
         return {}
 
+    @property
+    def debug(self):
+        return self.config.get('debug', False)
+
     def check(self):
         pass
 

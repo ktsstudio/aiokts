@@ -29,11 +29,10 @@ class KtsWebContainer(api_hour.Container):
     def __init__(self, application=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger(__name__)
-        self._store = self.make_store()
-        self._store_connect_coro = None
-
         self._application = None
         self.application = application
+        self._store = self.make_store()
+        self._store_connect_coro = None
 
     @property
     def application(self):

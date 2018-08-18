@@ -21,6 +21,10 @@ class Command:
     def config(self):
         return self.manager.config
 
+    @property
+    def debug(self):
+        return self.manager.debug
+
     @abc.abstractmethod
     def run(self, *args):
         pass
@@ -60,6 +64,7 @@ class StoreCommand(AsyncCommand):
             return None
         return self.manager.store_cls(self.store_config,
                                       need=self.STORE_NEED,
+                                      debug=self.debug,
                                       loop=self.loop)
 
     async def _store_connect(self):
